@@ -3,5 +3,5 @@ Ubpa_AddTarget(
   SOURCE
     "${PROJECT_SOURCE_DIR}/include/UContainer"
   INC
-    "include"
+    "${PROJECT_SOURCE_DIR}/include"
 )
