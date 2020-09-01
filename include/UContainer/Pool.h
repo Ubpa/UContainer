@@ -10,6 +10,7 @@ namespace Ubpa {
 	public:
 		Pool() = default;
 		Pool(Pool&& pool) noexcept;
+		Pool& operator=(Pool&& pool) noexcept;
 		~Pool();
 
 		template<typename... Args>

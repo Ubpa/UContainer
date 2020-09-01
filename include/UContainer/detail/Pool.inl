@@ -18,6 +18,16 @@ namespace Ubpa {
 	}
 
 	template<typename T>
+	Pool<T>& Pool<T>::operator=(Pool&& pool) noexcept {
+		Clear();
+		blocks = std::move(pool.blocks);
+		freeAdresses = std::move(pool.freeAdresses);
+		pool.blocks.clear();
+		pool.freeAdresses.clear();
+		return *this;
+	}
+
+	template<typename T>
 	template<typename... Args>
 	T* Pool<T>::Request(Args&&... args) {
 		if (freeAdresses.empty())
