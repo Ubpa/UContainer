@@ -15,4 +15,4 @@ namespace Ubpa {
 	Container SetSymmetricDifference(const Container& x, const Container& y);
 }
 
-#include "detail/Algorithm.inl"
+#include "details/Algorithm.inl"

@@ -5,7 +5,7 @@
 #include <cstdlib>
 
 namespace Ubpa {
-	template<typename T>
+	template<typename T, size_t BLOCK_SIZE = 1024>
 	class Pool {
 	public:
 		Pool() = default;
@@ -25,10 +25,9 @@ namespace Ubpa {
 		void NewBlock();
 
 	private:
-		static const size_t BLOCK_SIZE = 1024;
 		std::vector<T*> blocks;
 		std::vector<T*> freeAdresses;
 	};
 }
 
-#include "detail/Pool.inl"
+#include "details/Pool.inl"

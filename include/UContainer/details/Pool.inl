@@ -3,8 +3,8 @@
 #include <unordered_set>
 
 namespace Ubpa {
-	template<typename T>
-	Pool<T>::Pool(Pool&& pool) noexcept
+	template<typename T, size_t BLOCK_SIZE>
+	Pool<T, BLOCK_SIZE>::Pool(Pool&& pool) noexcept
 		: blocks{ std::move(pool.blocks) },
 		freeAdresses{ std::move(pool.freeAdresses) }
 	{
@@ -12,13 +12,13 @@ namespace Ubpa {
 		pool.freeAdresses.clear();
 	}
 
-	template<typename T>
-	Pool<T>::~Pool() {
+	template<typename T, size_t BLOCK_SIZE>
+	Pool<T, BLOCK_SIZE>::~Pool() {
 		Clear();
 	}
 
-	template<typename T>
-	Pool<T>& Pool<T>::operator=(Pool&& pool) noexcept {
+	template<typename T, size_t BLOCK_SIZE>
+	Pool<T, BLOCK_SIZE>& Pool<T, BLOCK_SIZE>::operator=(Pool&& pool) noexcept {
 		Clear();
 		blocks = std::move(pool.blocks);
 		freeAdresses = std::move(pool.freeAdresses);
@@ -27,9 +27,9 @@ namespace Ubpa {
 		return *this;
 	}
 
-	template<typename T>
+	template<typename T, size_t BLOCK_SIZE>
 	template<typename... Args>
-	T* Pool<T>::Request(Args&&... args) {
+	T* Pool<T, BLOCK_SIZE>::Request(Args&&... args) {
 		if (freeAdresses.empty())
 			NewBlock();
 		T* freeAdress = freeAdresses.back();
@@ -38,22 +38,22 @@ namespace Ubpa {
 		return freeAdress;
 	}
 
-	template<typename T>
-	void Pool<T>::Recycle(T* object) {
+	template<typename T, size_t BLOCK_SIZE>
+	void Pool<T, BLOCK_SIZE>::Recycle(T* object) {
 		if constexpr (!std::is_trivially_destructible_v<T>)
 			object->~T();
 		freeAdresses.push_back(object);
 	}
 
-	template<typename T>
-	void Pool<T>::Reserve(size_t n) {
+	template<typename T, size_t BLOCK_SIZE>
+	void Pool<T, BLOCK_SIZE>::Reserve(size_t n) {
 		size_t blockNum = n / BLOCK_SIZE + static_cast<size_t>(n % BLOCK_SIZE > 0);
 		for (size_t i = blocks.size(); i < blockNum; i++)
 			NewBlock();
 	}
 
-	template<typename T>
-	void Pool<T>::FastClear() {
+	template<typename T, size_t BLOCK_SIZE>
+	void Pool<T, BLOCK_SIZE>::FastClear() {
 		for (auto block : blocks) {
 #ifdef WIN32
 			_aligned_free(block);
@@ -65,8 +65,8 @@ namespace Ubpa {
 		freeAdresses.clear();
 	}
 
-	template<typename T>
-	void Pool<T>::Clear() {
+	template<typename T, size_t BLOCK_SIZE>
+	void Pool<T, BLOCK_SIZE>::Clear() {
 		if constexpr (std::is_trivially_destructible_v<T>)
 			FastClear();
 		else {
@@ -88,8 +88,8 @@ namespace Ubpa {
 		}
 	}
 
-	template<typename T>
-	void Pool<T>::NewBlock() {
+	template<typename T, size_t BLOCK_SIZE>
+	void Pool<T, BLOCK_SIZE>::NewBlock() {
 #ifdef WIN32
 		auto block = reinterpret_cast<T*>(_aligned_malloc(BLOCK_SIZE * sizeof(T), std::alignment_of_v<T>));
 #else
