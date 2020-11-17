@@ -54,12 +54,12 @@ namespace Ubpa {
 
 	template<typename T, size_t BLOCK_SIZE>
 	void Pool<T, BLOCK_SIZE>::FastClear() {
-		for (auto block : blocks) {
-#ifdef WIN32
+		for (auto* block : blocks) {
+#if defined(WIN32) || defined(_WINDOWS)
 			_aligned_free(block);
 #else
 			free(block);
-#endif // WIN32
+#endif // defined(WIN32) || defined(_WINDOWS)
 		}
 		blocks.clear();
 		freeAdresses.clear();
@@ -71,17 +71,17 @@ namespace Ubpa {
 			FastClear();
 		else {
 			std::unordered_set<T*> freeAdressesSet(freeAdresses.begin(), freeAdresses.end());
-			for (auto block : blocks) {
+			for (auto* block : blocks) {
 				for (size_t i = 0; i < BLOCK_SIZE; i++) {
 					T* adress = block + i;
 					if (freeAdressesSet.find(adress) == freeAdressesSet.end())
 						adress->~T();
 				}
-#ifdef WIN32
+#if defined(WIN32) || defined(_WINDOWS)
 				_aligned_free(block);
 #else
 				free(block);
-#endif // WIN32
+#endif // defined(WIN32) || defined(_WINDOWS)
 			}
 			blocks.clear();
 			freeAdresses.clear();
@@ -90,11 +90,11 @@ namespace Ubpa {
 
 	template<typename T, size_t BLOCK_SIZE>
 	void Pool<T, BLOCK_SIZE>::NewBlock() {
-#ifdef WIN32
+#if defined(WIN32) || defined(_WINDOWS)
 		auto block = reinterpret_cast<T*>(_aligned_malloc(BLOCK_SIZE * sizeof(T), std::alignment_of_v<T>));
 #else
 		auto block = reinterpret_cast<T*>(aligned_alloc(BLOCK_SIZE * sizeof(T), std::alignment_of_v<T>));
-#endif // WIN32
+#endif // defined(WIN32) || defined(_WINDOWS)
 		blocks.push_back(block);
 		for (size_t i = 0; i < BLOCK_SIZE; i++)
 			freeAdresses.push_back(block + i);

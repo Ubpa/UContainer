@@ -8,7 +8,7 @@ namespace Ubpa {
 	template<typename T, size_t BLOCK_SIZE = 1024>
 	class Pool {
 	public:
-		Pool() = default;
+		Pool() noexcept = default;
 		Pool(Pool&& pool) noexcept;
 		Pool& operator=(Pool&& pool) noexcept;
 		~Pool();

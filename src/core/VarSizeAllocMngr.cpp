@@ -1,13 +1,66 @@
 #include <UContainer/VarSizeAllocMngr.h>
 
+#include <UContainer/Align.h>
+
+#include <utility>
+#include <cassert>
+
 using namespace Ubpa;
+
+VarSizeAllocMngr::VarSizeAllocMngr(size_t capacity) :
+    capacity(capacity),
+    freeSize(capacity)
+{
+    // Insert single maximum-size block
+    AddNewBlock(0, capacity);
+    ResetCurrAlignment();
+}
+
+VarSizeAllocMngr::VarSizeAllocMngr(VarSizeAllocMngr&& rhs) noexcept :
+    offset2freeblock{ std::move(rhs.offset2freeblock) },
+    size2freeblock{ std::move(rhs.size2freeblock) },
+    capacity{ rhs.capacity },
+    freeSize{ rhs.freeSize },
+    curMinAlignment{ rhs.curMinAlignment }
+{
+    rhs.capacity = 0;
+    rhs.freeSize = 0;
+    rhs.curMinAlignment = 0;
+}
+
+VarSizeAllocMngr& VarSizeAllocMngr::operator=(VarSizeAllocMngr&& rhs) noexcept {
+    offset2freeblock = std::move(rhs.offset2freeblock);
+    size2freeblock = std::move(rhs.size2freeblock);
+    capacity = rhs.capacity;
+    freeSize = rhs.freeSize;
+    curMinAlignment = rhs.curMinAlignment;
+
+    rhs.capacity = 0;
+    rhs.freeSize = 0;
+    rhs.curMinAlignment = 0;
+
+    return *this;
+}
+
+void VarSizeAllocMngr::AddNewBlock(size_t Offset, size_t Size) {
+    auto [newBlockIter, success] = offset2freeblock.emplace(Offset, Size);
+    assert(success);
+    auto orderIter = size2freeblock.emplace(Size, newBlockIter);
+    newBlockIter->second.OrderBySizeIt = orderIter;
+}
+
+void VarSizeAllocMngr::ResetCurrAlignment() noexcept {
+    curMinAlignment = 1;
+    while (curMinAlignment * 2 <= capacity)
+        curMinAlignment *= 2;
+}
 
 VarSizeAllocMngr::Allocation VarSizeAllocMngr::Allocate(size_t size, size_t alignment) {
     assert(size > 0);
     assert("alignment must be power of 2" && IsPowerOfTwo(alignment));
     size = Align(size, alignment);
     if (freeSize < size)
-        return Allocation::InvalidAllocation();
+        return Allocation::Invalid();
 
     auto alignmentReserve = (alignment > curMinAlignment) ? alignment - curMinAlignment : 0;
     // Get the first block that is large enough to encompass size + alignmentReserve bytes
@@ -15,7 +68,7 @@ VarSizeAllocMngr::Allocation VarSizeAllocMngr::Allocate(size_t size, size_t alig
     // is not less (i.e. >= ) than key
     auto SmallestBlockItIt = size2freeblock.lower_bound(size + alignmentReserve);
     if (SmallestBlockItIt == size2freeblock.end())
-        return Allocation::InvalidAllocation();
+        return Allocation::Invalid();
 
     auto SmallestBlockIt = SmallestBlockItIt->second;
     assert(size + alignmentReserve <= SmallestBlockIt->second.size);
@@ -132,7 +185,7 @@ void VarSizeAllocMngr::Free(size_t offset, size_t size) {
     freeSize += size;
     if (IsEmpty()) {
         // Reset current alignment
-        assert(GetNumFreeBlocks() == 1);
+        assert(offset2freeblock.size() == 1);
         ResetCurrAlignment();
     }
 }

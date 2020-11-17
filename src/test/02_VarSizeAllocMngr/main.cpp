@@ -20,6 +20,9 @@ int main() {
 		<< allocation1.IsValid() << endl
 		<< allocation1.size << endl
 		<< allocation1.unalignedOffset << endl;
+
+	VarSizeAllocMngr allocMngr2(128);
+	allocMngr2 = std::move(allocMngr);
 	
 	return 0;
 }
