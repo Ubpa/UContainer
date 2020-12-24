@@ -17,7 +17,6 @@ private:
 
 int main() {
 	Pool<C> pool;
-	sizeof(C);
 	for (size_t i = 0; i < 100; i++)
 		pool.Request(i);
 	cout << "move" << endl;
