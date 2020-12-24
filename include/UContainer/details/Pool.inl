@@ -1,6 +1,9 @@
 #pragma once
 
 #include <unordered_set>
+#if defined(_WIN32) || defined(_WIN64)
+#include <malloc.h>
+#endif
 
 namespace Ubpa {
 	template<typename T, size_t BLOCK_SIZE>
@@ -55,11 +58,11 @@ namespace Ubpa {
 	template<typename T, size_t BLOCK_SIZE>
 	void Pool<T, BLOCK_SIZE>::FastClear() {
 		for (auto* block : blocks) {
-#if defined(WIN32) || defined(_WINDOWS)
+#if defined(_WIN32) || defined(_WIN64)
 			_aligned_free(block);
 #else
 			free(block);
-#endif // defined(WIN32) || defined(_WINDOWS)
+#endif // defined(_WIN32) || defined(_WIN64)
 		}
 		blocks.clear();
 		freeAdresses.clear();
@@ -77,11 +80,11 @@ namespace Ubpa {
 					if (freeAdressesSet.find(adress) == freeAdressesSet.end())
 						adress->~T();
 				}
-#if defined(WIN32) || defined(_WINDOWS)
+#if defined(_WIN32) || defined(_WIN64)
 				_aligned_free(block);
 #else
 				free(block);
-#endif // defined(WIN32) || defined(_WINDOWS)
+#endif // defined(_WIN32) || defined(_WIN64)
 			}
 			blocks.clear();
 			freeAdresses.clear();
